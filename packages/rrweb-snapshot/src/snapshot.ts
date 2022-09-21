@@ -1191,7 +1191,7 @@ export function serializeNodeWithId(
     if (isStylesheetLoaded(n as HTMLLinkElement) === false) return null; // add stylesheet in later mutation
   }
 
-  return serializedNode;
+  return recordChild ? serializedNode : null;
 }
 
 function snapshot(
