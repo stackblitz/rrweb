@@ -21,6 +21,42 @@ import {
   isNativeShadowDom,
 } from './utils';
 
+const dataURIs = new Map();
+
+setInterval(() => {
+  for (const stylesheet of Array.from(document.styleSheets)) {
+    try {
+      for (const rule of Array.from(stylesheet.cssRules)) {
+        if (!(rule instanceof CSSFontFaceRule)) {
+          continue;
+        }
+
+        const [, href] =
+          /(?:url\(['"]?)(.*?)(?:['"]?\))/.exec((<any>rule.style).src) || [];
+        if (!href) {
+          continue;
+        }
+
+        const url = new URL(href, stylesheet.href || undefined).href;
+
+        if (dataURIs.has(url)) {
+          continue;
+        }
+
+        fetch(url)
+          .then((res) => res.blob())
+          .then((blob) => {
+            const reader = new FileReader();
+            reader.onload = function () {
+              dataURIs.set(url, this.result);
+            };
+            reader.readAsDataURL(blob);
+          });
+      }
+    } catch {}
+  }
+}, 500);
+
 let _id = 1;
 const tagNameRegex = new RegExp('[^a-z0-9-_:]');
 
@@ -116,6 +152,13 @@ export function absoluteToStylesheet(
       if (!filePath) {
         return origin;
       }
+      const resolvedPath = new URL(filePath, href).href;
+      if (dataURIs.has(resolvedPath)) {
+        return 'url('
+          .concat(maybeQuote)
+          .concat(dataURIs.get(resolvedPath))
+          .concat(maybeQuote, ')');
+      }
       if (!RELATIVE_PATH.test(filePath)) {
         return `url(${maybeQuote}${filePath}${maybeQuote})`;
       }
@@ -127,19 +170,7 @@ export function absoluteToStylesheet(
           extractOrigin(href) + filePath
         }${maybeQuote})`;
       }
-      const stack = href.split('/');
-      const parts = filePath.split('/');
-      stack.pop();
-      for (const part of parts) {
-        if (part === '.') {
-          continue;
-        } else if (part === '..') {
-          stack.pop();
-        } else {
-          stack.push(part);
-        }
-      }
-      return `url(${maybeQuote}${stack.join('/')}${maybeQuote})`;
+      return `url(${maybeQuote}${resolvedPath}${maybeQuote})`;
     },
   );
 }
