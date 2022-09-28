@@ -43,7 +43,9 @@ setInterval(() => {
           continue;
         }
 
-        fetch(url)
+        dataURIs.set(url, undefined);
+
+        fetch(url, { credentials: 'same-origin', mode: 'cors' })
           .then((res) => res.blob())
           .then((blob) => {
             const reader = new FileReader();
