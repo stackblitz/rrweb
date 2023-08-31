@@ -27,12 +27,8 @@ setInterval(() => {
   for (const stylesheet of Array.from(document.styleSheets)) {
     try {
       for (const rule of Array.from(stylesheet.cssRules)) {
-        if (!(rule instanceof CSSFontFaceRule)) {
-          continue;
-        }
-
         const [, href] =
-          /(?:url\(['"]?)(.*?)(?:['"]?\))/.exec((<any>rule.style).src) || [];
+          /(?:url\(['"]?)(.*?)(?:['"]?\))/.exec(rule.cssText) || [];
         if (!href) {
           continue;
         }
@@ -57,7 +53,7 @@ setInterval(() => {
       }
     } catch {}
   }
-}, 500);
+}, 2000);
 
 let _id = 1;
 const tagNameRegex = new RegExp('[^a-z0-9-_:]');
