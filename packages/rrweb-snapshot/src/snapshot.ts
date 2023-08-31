@@ -23,12 +23,21 @@ import {
 
 const dataURIs = new Map();
 
+const rules = new WeakSet();
+
 setInterval(() => {
   for (const stylesheet of Array.from(document.styleSheets)) {
     try {
       for (const rule of Array.from(stylesheet.cssRules)) {
+        if (rules.has(rule)) {
+          continue;
+        }
+
+        rules.add(rule);
+
         const [, href] =
           /(?:url\(['"]?)(.*?)(?:['"]?\))/.exec(rule.cssText) || [];
+
         if (!href) {
           continue;
         }
@@ -53,7 +62,7 @@ setInterval(() => {
       }
     } catch {}
   }
-}, 2000);
+}, 400);
 
 let _id = 1;
 const tagNameRegex = new RegExp('[^a-z0-9-_:]');
